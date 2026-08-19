@@ -1,6 +1,8 @@
-from fastapi import FastAPI
-from app.database import engine, Base, init_db
+from fastapi import FastAPI, Depends, BackgroundTasks
+from sqlalchemy.orm import Session
+from app.database import engine, Base, init_db, get_db
 from app.config import settings
+from app.jobs import process_pending_images
 from app.models import Image, ImageMetadata, Post, Match, AICostLog
 
 # Initialize extensions and tables
@@ -21,3 +23,12 @@ def health_check():
         "database_connected": True,
         "gemini_configured": gemini_configured
     }
+
+@app.post("/api/jobs/process-images")
+def trigger_image_processing(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """Triggers the async vision AI batch job."""
+    
+    # We pass the function to FastAPI to run AFTER it returns the 202 Accepted response
+    background_tasks.add_task(process_pending_images, db)
+    
+    return {"message": "Batch processing started in the background."}
