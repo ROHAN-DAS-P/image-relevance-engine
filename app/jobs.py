@@ -1,11 +1,14 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from app.models import Image, ImageMetadata, AICostLog
 from app.services.vision import analyze_image_with_gemini
 import time
 
 def process_pending_images(db: Session):
     # Find all images waiting to be processed
-    pending_images = db.query(Image).filter(Image.status == "pending").all()
+    pending_images = db.query(Image).filter(
+    or_(Image.status == "pending", Image.status == "failed")
+    ).all()
     
     for image in pending_images:
         image.status = "processing"
@@ -36,7 +39,8 @@ def process_pending_images(db: Session):
             # 4. Save the cost attribution
             cost_log = AICostLog(
                 job_type="vision",
-                model="gemini-1.5-flash",
+                # model="gemini-1.5-flash",
+                model="gemini-3.6-flash",
                 tokens_used=result["tokens"],
                 estimated_cost=result["cost"],
                 image_id=image.id
