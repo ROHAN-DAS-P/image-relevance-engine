@@ -21,7 +21,8 @@ def analyze_image_with_gemini(file_path: str) -> dict:
     img = PIL.Image.open(file_path)
     
     # We use Flash because it's insanely fast and has a free tier
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-3.6-flash')
     
     # 2. Ask for the tags and strictly enforce our Pydantic schema
     response = model.generate_content(
