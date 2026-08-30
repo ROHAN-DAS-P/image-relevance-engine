@@ -4,6 +4,7 @@ from app.database import engine, Base, init_db, get_db
 from app.config import settings
 from app.jobs import process_pending_images
 from app.models import Image, ImageMetadata, Post, Match, AICostLog
+from app.services.matching import match_images_for_post
 
 # Initialize extensions and tables
 init_db()
@@ -22,6 +23,32 @@ def health_check():
         "status": "ok", 
         "database_connected": True,
         "gemini_configured": gemini_configured
+    }
+
+
+@app.get("/api/posts/{post_id}/images")
+def get_image_suggestions(post_id: str, db: Session = Depends(get_db)):
+    """
+    Ranks images for a specific post and runs them through the Mismatch Guard.
+    """
+    # Verify the post exists
+    post = db.query(Post).filter(Post.id == post_id).first()
+    if not post:
+        return {"error": "Post not found"}
+        
+    results = match_images_for_post(post_id, db)
+    
+    # If no images passed the hard similarity threshold
+    if not results or all(r["status"] == "guarded_mismatch" for r in results):
+        return {
+            "post_title": post.title,
+            "message": "No confident match found. Similarity below threshold or detected subjects do not match article topic.",
+            "candidates_reviewed": results
+        }
+        
+    return {
+        "post_title": post.title,
+        "suggestions": results
     }
 
 @app.post("/api/jobs/process-images")
