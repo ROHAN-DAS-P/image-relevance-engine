@@ -791,9 +791,7 @@ You can use Swagger UI to inspect request/response schemas and test the API endp
 
 ## API Documentation — Swagger UI
 
-### Swagger Overview
 
-![Swagger UI Overview](static/screenshots/swagger-overview.png)
 
 
 ### Image Suggestions API
